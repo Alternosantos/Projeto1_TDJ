@@ -90,6 +90,135 @@ MineDirt/
 
 ---
 
+## Notable Functions
+
+These are some notable functions that are already implemented 
+
+Handles player camera movement
+```
+public bool HandleMovement(GameTime gameTime)
+    {
+        Vector3 moveDirection = Vector3.Zero;
+
+        Matrix yawRotation = Matrix.CreateRotationY(yaw);
+
+        Vector3 forwardPlanar = Vector3.Transform(Vector3.Forward, yawRotation);
+        Vector3 rightPlanar = Vector3.Transform(Vector3.Right, yawRotation);
+
+        if (kbState.IsKeyDown(Keys.W))
+            moveDirection += forwardPlanar;
+
+        if (kbState.IsKeyDown(Keys.S))
+            moveDirection -= forwardPlanar;
+
+        if (kbState.IsKeyDown(Keys.A))
+            moveDirection -= rightPlanar;
+
+        if (kbState.IsKeyDown(Keys.D))
+            moveDirection += rightPlanar;
+
+        if (kbState.IsKeyDown(Keys.LeftShift))
+            moveDirection += Vector3.Down;
+
+        if (kbState.IsKeyDown(Keys.Space))
+            moveDirection += Vector3.Up;
+
+        if (moveDirection.LengthSquared() > 0.001f)
+        {
+            Position += Vector3.Normalize(moveDirection) * GetMovementSpeed() * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            return true;
+        }
+
+        return false;
+    }
+```
+
+Generates random terrain chunks
+```
+public void GenerateTerrain()
+```
+
+Handles block breaks 
+```
+public static void BreakBlock(Vector3 position)
+    {
+        if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
+        {
+            int index = position.ToChunkRelativePosition().ToIndex();
+            if (chunk.Blocks[index].Type == BlockType.Air)
+                return;
+
+            chunk.Blocks[index] = default;
+            chunk.BlockCount--;
+            MeshThreadPool.EnqueueTask(() =>
+            {
+                ChunkMeshData meshData = chunk.GenerateMeshData();
+
+                ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
+            });
+
+            if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
+            {
+                foreach (Vector3 chunkNbPos in chunkNbPositions)
+                {
+                    if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
+                    {
+                        MeshThreadPool.EnqueueTask(() =>
+                        {
+                            ChunkMeshData meshData = chunkNb.GenerateMeshData();
+
+                            ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
+                        });
+                    }
+                }
+            }
+        }
+    }
+```
+
+Handles bblock placement 
+```
+public static void PlaceBlock(Vector3 position, Block block)
+    {
+        if (position.Y > Chunk.Height || position.Y < 0)
+            return;
+
+        if (Chunks.TryGetValue(position.ToChunkPosition(), out Chunk chunk))
+        {
+            int index = position.ToChunkRelativePosition().ToIndex();
+            if (chunk.Blocks[index].Type != BlockType.Air)
+                return;
+
+            chunk.Blocks[index] = block;
+            chunk.BlockCount++;
+            MeshThreadPool.EnqueueTask(() =>
+            {
+                ChunkMeshData meshData = chunk.GenerateMeshData();
+
+                ChunkBufferGenerationQueue.Enqueue(() => chunk.GenerateBuffers(meshData));
+            });
+
+            if (chunk.TryGetBlockChunkNeighbours(index, out List<Vector3> chunkNbPositions))
+            {
+                foreach (Vector3 chunkNbPos in chunkNbPositions)
+                {
+                    if (Chunks.TryGetValue(chunkNbPos, out Chunk chunkNb))
+                    {
+                        MeshThreadPool.EnqueueTask(() =>
+                        {
+                            ChunkMeshData meshData = chunkNb.GenerateMeshData();
+
+                            ChunkBufferGenerationQueue.Enqueue(() => chunkNb.GenerateBuffers(meshData));
+                        });
+                    }
+                }
+            }
+        }
+    }
+```
+
+
+
 ## Roadmap / Current Status
 
 MineDirt is currently in **alpha** (v0.2.0-alpha). Active development is ongoing. Planned or in-progress features may include:
