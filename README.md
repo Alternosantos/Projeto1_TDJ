@@ -258,5 +258,5 @@ This project is licensed under the [MIT License](LICENSE.txt).
 
 ## Students who worked onn this projects readme
 
-a28316 Alberto Santos
-a28616 Paulo Aguiar
+-a28316 Alberto Santos
+-a28616 Paulo Aguiar
