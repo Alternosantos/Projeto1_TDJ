@@ -255,3 +255,8 @@ This project is licensed under the [MIT License](LICENSE.txt).
 ##  Original Repo
 
 - [This project was created by vycdev and guyfromtheforest ](https://github.com/vycdev/MineDirt)
+
+## Students who worked onn this projects readme
+
+a28316 Alberto Santos
+a28616 Paulo Aguiar
